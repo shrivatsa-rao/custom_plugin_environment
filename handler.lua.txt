@@ -1,0 +1,30 @@
+local plugin = {
+  PRIORITY = 1000,
+  VERSION = "0.1",
+}
+
+-- Define your encryption key and initialization vector
+local encryptionKey = "novigo@123"
+local initializationVector = "nil#123"
+
+function plugin:access(plugin_conf)
+  kong.log.inspect(plugin_conf)
+
+  -- Encrypt the request header value directly using AES encryption
+  local crypto = require("crypto")
+  local encryptedValue = crypto.encrypt("aes-256-cbc", encryptionKey, initializationVector, kong.request.get_header(plugin_conf.request_header))
+
+  -- Set the encrypted value in the request_header
+  kong.service.request.set_header(plugin_conf.request_header, encryptedValue)
+end
+
+function plugin:header_filter(plugin_conf)
+  -- Set the response header with Encryption-Key and Initialization-Vector
+  kong.response.set_header("Encryption-Key", encryptionKey)
+  kong.response.set_header("Initialization-Vector", initializationVector)
+
+  -- Set the response_header specified in the plugin configuration
+  kong.response.set_header(plugin_conf.response_header, "this is on the response")
+end
+
+return plugin
